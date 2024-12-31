@@ -1,6 +1,8 @@
 import random
+import tkinter as tk
+from tkinter import messagebox
 
-list_words = ["python","paris","skills","love","mother", "nextjs", "hope", "laptop", "database", "home", "computer", "engineer", "code", "alpha", "vscode"]
+list_words = ["python", "paris", "skills", "love", "mother", "nextjs", "hope", "laptop", "database", "home", "computer", "engineer", "code", "alpha", "vscode"]
 
 # select a random word from the list_words list
 def random_word():
@@ -16,50 +18,77 @@ def display_word(word, guessed_letters):
             display += "_ "
     return display.strip()
 
-# function to play the Hangman game
-def play_hangman():
-    word = random_word()  
-    guessed_letters = []  
-    incorrect_guesses = 0  
-    max_incorrect_guesses = 6  
+# initialize game state
+word = random_word()
+guessed_letters = []
+incorrect_guesses = 0
+max_incorrect_guesses = 6
 
-    print("Welcome to the Hangman game!")
-    print("You have", max_incorrect_guesses, "incorrect answers allowed")
-    
-    while incorrect_guesses < max_incorrect_guesses:
-        print("\nCurrent word: ", display_word(word, guessed_letters))
-        print("Guessed letters:", guessed_letters)
-        print(f"Remaining incorrect answers: {max_incorrect_guesses - incorrect_guesses}")
-        
-        # ask the user to guess a letter
-        guess = input("Guess a letter: ").lower()
+# function to handle letter guessing
+def guess_letter():
+    global incorrect_guesses
+    letter = entry.get().lower()
+    entry.delete(0, tk.END)
 
-        # check if the input is a valid letter
-        if len(guess) != 1 or not guess.isalpha():
-            print("Please enter a valid letter.")
-            continue
-        
-        # check if the letter has already been guessed
-        if guess in guessed_letters:
-            print("You have already guessed this letter.")
-            continue
-        
-        # add the guessed letter to the list of guessed letters
-        guessed_letters.append(guess)
+    if len(letter) != 1 or not letter.isalpha():
+        messagebox.showerror("Invalid Input", "Please enter a single valid letter.")
+        return
 
-        # check if the letter is in the word
-        if guess in word:
-            print(f"Good job! The letter '{guess}' is in the word.")
-        else:
-            print(f"Oops! The letter '{guess}' is not in the word.")
-            incorrect_guesses += 1
-        
-        # check if the player has guessed the entire word
-        if all(letter in guessed_letters for letter in word):
-            print(f"\nCongratulations! You guessed the word '{word}' correctly!")
-            break
+    if letter in guessed_letters:
+        messagebox.showwarning("Duplicate Guess", f"You already guessed '{letter}'.")
+        return
+
+    guessed_letters.append(letter)
+    if letter in word:
+        update_display()
+        if all(l in guessed_letters for l in word):
+            messagebox.showinfo("Congratulations!", f"You guessed the word '{word}' correctly!")
+            reset_game()
     else:
-        print(f"\nGame over! The word was '{word}'. Better luck next time!")
+        global incorrect_guesses
+        incorrect_guesses += 1
+        update_display()
+        if incorrect_guesses >= max_incorrect_guesses:
+            messagebox.showerror("Game Over", f"You lost! The word was '{word}'.")
+            reset_game()
 
-# start the game
-play_hangman()
+# function to update the word display and remaining attempts
+def update_display():
+    word_label.config(text=display_word(word, guessed_letters))
+    guessed_label.config(text=f"Guessed Letters: {', '.join(guessed_letters)}")
+    attempts_label.config(text=f"Remaining Attempts: {max_incorrect_guesses - incorrect_guesses}")
+
+# function to reset the game
+def reset_game():
+    global word, guessed_letters, incorrect_guesses
+    word = random_word()
+    guessed_letters = []
+    incorrect_guesses = 0
+    update_display()
+
+# create the main tkinter window
+root = tk.Tk()
+root.title("Hangman Game")
+
+# create and place widgets
+word_label = tk.Label(root, text=display_word(word, guessed_letters), font=("Helvetica", 24))
+word_label.pack(pady=20)
+
+guessed_label = tk.Label(root, text="Guessed Letters: ", font=("Helvetica", 14))
+guessed_label.pack(pady=10)
+
+attempts_label = tk.Label(root, text=f"Remaining Attempts: {max_incorrect_guesses}", font=("Helvetica", 14))
+attempts_label.pack(pady=10)
+
+entry = tk.Entry(root, font=("Helvetica", 16))
+entry.pack(pady=10)
+
+guess_button = tk.Button(root, text="Guess", command=guess_letter, font=("Helvetica", 16))
+guess_button.pack(pady=20)
+
+reset_button = tk.Button(root, text="Reset Game", command=reset_game, font=("Helvetica", 16))
+reset_button.pack(pady=10)
+
+# start the tkinter main loop
+update_display()
+root.mainloop()
